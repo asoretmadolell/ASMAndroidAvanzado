@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ASM Android Avanzado</string>
+    <string name="action_settings">Ajustes</string>
+    <string name="take_picture">Tomar foto</string>
+    <string name="discard_picture">Descartar foto</string>
+    <string name="publish_on_facebook">Publicar en Facebook</string>
+    <string name="unavailable">No disponible</string>
+
+</resources>
