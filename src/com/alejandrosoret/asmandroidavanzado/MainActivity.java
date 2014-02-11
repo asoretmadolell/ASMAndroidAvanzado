@@ -1,8 +1,18 @@
 package com.alejandrosoret.asmandroidavanzado;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.Menu;
@@ -21,6 +31,7 @@ public class MainActivity extends Activity {
 	private TextView mLocationInfo = null;
 	private Button mDiscardPicture = null;
 	private Button mPublishOnFacebook = null;
+	private LocationManager mLocationManager = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +46,8 @@ public class MainActivity extends Activity {
         mPublishOnFacebook = (Button) findViewById(R.id.btn_publish_on_facebook);
         
         activateControls(false);
+        
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         
         // Botón de hacer la foto
         mTakePicture.setOnClickListener(new OnClickListener() {
@@ -76,7 +89,7 @@ public class MainActivity extends Activity {
 		mTakePicture.setEnabled(!b);
 		if (!b) mImage.setImageBitmap(null);
 		if (!b) mLocationInfo.setText(R.string.unavailable);
-		mLocationInfo.setEnabled(b);
+		mLocationInfo.setText((b) ? GetLocationInfo() : "" );
 		mDiscardPicture.setEnabled(b);
 		mPublishOnFacebook.setEnabled(b);
 	}
@@ -87,6 +100,51 @@ public class MainActivity extends Activity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
+    }
+    
+    public String GetLocationInfo() {
+    	String LocationInfo = null;
+    	Location CurrentLocation = null;
+    	if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    		CurrentLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+    		LocationInfo = "Latitud: " + CurrentLocation.getLatitude() + "\r\nLongitud: " + CurrentLocation.getLatitude();
+    		new FindLocationInfo().execute(CurrentLocation);
+    	}
+		return LocationInfo;
+    }
+    
+    private class FindLocationInfo extends AsyncTask<Location, Void, String> {
+
+		@Override
+		protected String doInBackground(Location... params) {
+			String LocationString = null;
+			Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+			
+			Location CurrentLocation = params[0];
+			List<Address> addresses = null;
+			try { addresses = geocoder.getFromLocation(CurrentLocation.getLatitude(), CurrentLocation.getLongitude(), 1); }
+			catch (IOException e) {}
+			
+			if (addresses != null && addresses.size() > 0 ) {
+				Address address = addresses.get(0);
+				LocationString = String.format("%s, %s, %s",
+						address.getMaxAddressLineIndex() > 0 ? address.getAddressLine(0) : "",
+						address.getLocality(),
+						address.getCountryName());
+			}
+			return LocationString;
+		}
+		
+		@Override
+		protected void onPostExecute(String LocationInfo) {
+			if (LocationInfo != null) {
+				mLocationInfo.append ("\r\n" + LocationInfo);
+			}
+			else {
+				mLocationInfo.append ("\r\n" + "Error al detectar la localización");
+			}
+		}
+		
     }
     
 }

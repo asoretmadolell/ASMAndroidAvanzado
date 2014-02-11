@@ -25,7 +25,7 @@
     <TextView
         android:id="@+id/location_info"
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="100dp"
         android:layout_gravity="center_horizontal" />
 
     <Button
