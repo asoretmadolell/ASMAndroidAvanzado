@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -24,22 +23,32 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+
 import com.alejandrosoret.asmandroidavanzado.ShakeDetector.OnShakeListener;
 
-public class MainActivity extends Activity {
+public class MainActivity extends android.support.v4.app.FragmentActivity {
 
 	private static final int TAKE_PICTURE_RQ = 69;
 
 	private Button mTakePicture = null;
+	private Button mDiscardPicture = null;
 	private ImageView mImage = null;
 	private TextView mLocationInfo = null;
-	private Button mDiscardPicture = null;
 	private Button mPublishOnFacebook = null;
 	private LocationManager mLocationManager = null;
+	private GoogleMap mMap = null;
 
 	private SensorManager mSensorManager;
 	private Sensor mAccelerometer;
 	private ShakeDetector mShakeDetector;
+
+	private Location mCurrentLocation = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +57,11 @@ public class MainActivity extends Activity {
 
 		// Pillamos las vistas
 		mTakePicture = (Button) findViewById(R.id.btn_take_picture);
+		mDiscardPicture = (Button) findViewById(R.id.btn_discard_picture);
 		mImage = (ImageView) findViewById(R.id.picture);
 		mLocationInfo = (TextView) findViewById(R.id.location_info);
-		mDiscardPicture = (Button) findViewById(R.id.btn_discard_picture);
 		mPublishOnFacebook = (Button) findViewById(R.id.btn_publish_on_facebook);
+		mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.locationMap)).getMap();
 
 		activateControls(false);
 
@@ -62,7 +72,6 @@ public class MainActivity extends Activity {
 		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		mShakeDetector = new ShakeDetector();
 		mShakeDetector.setOnShakeListener(new OnShakeListener() {
-
 			@Override
 			public void onShake(int count) {
 				activateControls(false);
@@ -121,11 +130,12 @@ public class MainActivity extends Activity {
 
 	private void activateControls(boolean b) {
 		mTakePicture.setEnabled(!b);
+		mDiscardPicture.setEnabled(b);
 		if (!b) mImage.setImageBitmap(null);
 		if (!b) mLocationInfo.setText(R.string.unavailable);
 		mLocationInfo.setText((b) ? GetLocationInfo() : "" );
-		mDiscardPicture.setEnabled(b);
 		mPublishOnFacebook.setEnabled(b);
+		if (!b) mMap.clear();
 	}
 
 
@@ -138,11 +148,10 @@ public class MainActivity extends Activity {
 
 	public String GetLocationInfo() {
 		String LocationInfo = null;
-		Location CurrentLocation = null;
 		if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			CurrentLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-			LocationInfo = "Latitud: " + CurrentLocation.getLatitude() + "\r\nLongitud: " + CurrentLocation.getLatitude();
-			new FindLocationInfo().execute(CurrentLocation);
+			mCurrentLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+			LocationInfo = "Latitud: " + mCurrentLocation.getLatitude() + "\r\nLongitud: "	+ mCurrentLocation.getLatitude();
+			new FindLocationInfo().execute(mCurrentLocation);
 		}
 		return LocationInfo;
 	}
@@ -173,6 +182,9 @@ public class MainActivity extends Activity {
 		protected void onPostExecute(String LocationInfo) {
 			if (LocationInfo != null) {
 				mLocationInfo.append ("\r\n" + LocationInfo);
+				LatLng position = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+				mMap.addMarker(new MarkerOptions().position(position).title("Marker"));
+				mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 10));
 			}
 			else {
 				mLocationInfo.append ("\r\n" + "Error al detectar la localización");
