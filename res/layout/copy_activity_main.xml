@@ -9,8 +9,8 @@
 
     <fragment
         android:id="@+id/locationMap"
-        android:layout_width="400dp"
-        android:layout_height="200dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         class="com.google.android.gms.maps.SupportMapFragment"
         android:padding="2dp" />
         
