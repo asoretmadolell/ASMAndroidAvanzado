@@ -7,5 +7,10 @@
     <string name="discard_picture">Descartar foto</string>
     <string name="publish_on_facebook">Publicar en Facebook</string>
     <string name="unavailable">No disponible</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+    <string name="publishOnFacebook_title">Publicar en Facebook</string>
+    <string name="publishOnFacebook_message">Al hacer clic en "Sí" se publicará esta imagen en Facebook.\n¿Estás seguro?</string>
+    <string name="connectingToFacebook">Conectando&#8230;</string>
 
 </resources>

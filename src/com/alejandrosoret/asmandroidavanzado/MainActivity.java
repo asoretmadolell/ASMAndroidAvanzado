@@ -1,10 +1,13 @@
 package com.alejandrosoret.asmandroidavanzado;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.hardware.Sensor;
@@ -16,6 +19,7 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,14 +27,12 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.alejandrosoret.asmandroidavanzado.ShakeDetector.OnShakeListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-
-import com.alejandrosoret.asmandroidavanzado.ShakeDetector.OnShakeListener;
 
 public class MainActivity extends android.support.v4.app.FragmentActivity {
 
@@ -38,6 +40,7 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 
 	private Button mTakePicture = null;
 	private Button mDiscardPicture = null;
+	private Bitmap mCurrentPicture = null;
 	private ImageView mImage = null;
 	private TextView mLocationInfo = null;
 	private Button mPublishOnFacebook = null;
@@ -93,6 +96,14 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 				activateControls(false);
 			}
 		});
+		
+		// Botón de Féisbul
+		mPublishOnFacebook.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				publishOnFacebook();
+			}
+		});
 
 	}
 
@@ -115,8 +126,7 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 		if (requestCode == TAKE_PICTURE_RQ) {
 			if (resultCode == RESULT_OK) {
 				Bundle extras = data.getExtras();
-				Bitmap bitmap = (Bitmap) extras.get("data");
-				mImage.setImageBitmap(bitmap);
+				mCurrentPicture = (Bitmap) extras.get("data");
 				activateControls(true);
 			}
 			else if (resultCode == RESULT_CANCELED); {
@@ -131,9 +141,10 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 	private void activateControls(boolean b) {
 		mTakePicture.setEnabled(!b);
 		mDiscardPicture.setEnabled(b);
-		if (!b) mImage.setImageBitmap(null);
+		if (!b) mCurrentPicture = null;
+		mImage.setImageBitmap(mCurrentPicture);
 		if (!b) mLocationInfo.setText(R.string.unavailable);
-		mLocationInfo.setText((b) ? GetLocationInfo() : "" );
+		mLocationInfo.setText( ( b ) ? GetLocationInfo() : "" );
 		mPublishOnFacebook.setEnabled(b);
 		if (!b) mMap.clear();
 	}
@@ -147,11 +158,13 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 	}
 
 	public String GetLocationInfo() {
-		String LocationInfo = null;
+		String LocationInfo = "";
 		if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			mCurrentLocation = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-			LocationInfo = "Latitud: " + mCurrentLocation.getLatitude() + "\r\nLongitud: "	+ mCurrentLocation.getLatitude();
-			new FindLocationInfo().execute(mCurrentLocation);
+			if(mCurrentLocation != null) {
+				LocationInfo = "Latitud: " + mCurrentLocation.getLatitude() + "\r\nLongitud: "	+ mCurrentLocation.getLongitude();
+				new FindLocationInfo().execute(mCurrentLocation);
+			}
 		}
 		return LocationInfo;
 	}
@@ -166,7 +179,9 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 			Location CurrentLocation = params[0];
 			List<Address> addresses = null;
 			try { addresses = geocoder.getFromLocation(CurrentLocation.getLatitude(), CurrentLocation.getLongitude(), 1); }
-			catch (IOException e) {}
+			catch (IOException e) {
+				Log.d("Geocoder error", e.getMessage());
+			}
 
 			if (addresses != null && addresses.size() > 0 ) {
 				Address address = addresses.get(0);
@@ -175,6 +190,7 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 								address.getLocality(),
 								address.getCountryName());
 			}
+			
 			return LocationString;
 		}
 
@@ -191,6 +207,32 @@ public class MainActivity extends android.support.v4.app.FragmentActivity {
 			}
 		}
 
+	}
+	
+	public void publishOnFacebook() {
+		
+		if (mCurrentPicture != null) {
+			new AlertDialog.Builder(this)
+				.setTitle(R.string.publishOnFacebook_title)
+				.setMessage(R.string.publishOnFacebook_message)
+				.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						ByteArrayOutputStream stream = new ByteArrayOutputStream();
+						mCurrentPicture.compress(Bitmap.CompressFormat.PNG, 100, stream);
+						byte[] byteArray = stream.toByteArray();
+						
+						Intent intent = new Intent(MainActivity.this, FacebookActivity.class);
+						intent.putExtra(FacebookActivity.imageParams, byteArray);
+						intent.putExtra(FacebookActivity.locationParams, mCurrentLocation);
+						startActivity(intent);
+					}
+				})
+				.setNegativeButton(R.string.no, null)
+				.setIcon(R.drawable.com_facebook_logo)
+				.show();
+		}
+		
 	}
 
 }

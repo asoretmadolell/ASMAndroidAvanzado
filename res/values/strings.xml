@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <string name="app_id">606627899430604</string>
     <string name="app_name">ASM Advanced Android</string>
     <string name="action_settings">Settings</string>
     <string name="take_picture">Take picture</string>
     <string name="discard_picture">Discard picture</string>
     <string name="publish_on_facebook">Publish on Facebook</string>
     <string name="unavailable">Unavailable</string>
-    <string name="app_id">606627899430604</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="publishOnFacebook_title">Publish on Facebook</string>
+    <string name="publishOnFacebook_message">Clicking "Yes" will publish this picture on Facebook.\nAre you sure?</string>
+    <string name="connectingToFacebook">Connecting&#8230;</string>
 
 </resources>
